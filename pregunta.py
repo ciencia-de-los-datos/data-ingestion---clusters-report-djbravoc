@@ -13,9 +13,13 @@ import pandas as pd
 
 
 def ingest_data():
-
-    #
-    # Inserte su código aquí
-    #
-
-    return df
+    tabla = pd.read_fwf("clusters_report.txt", skiprows=4, names=['cluster', 'cantidad_de_palabras_clave', 'porcentaje_de_palabras_clave', 'principales_palabras_clave']) 
+    tabla.fillna(method="ffill", inplace=True)
+    tabla = tabla.groupby(['cluster', 'cantidad_de_palabras_clave', 'porcentaje_de_palabras_clave'])['principales_palabras_clave'].apply(' '.join).reset_index() 
+    tabla["cantidad_de_palabras_clave"] = tabla["cantidad_de_palabras_clave"].astype(int)
+    tabla["porcentaje_de_palabras_clave"] = tabla["porcentaje_de_palabras_clave"].str.replace("%", "").str.replace(",", ".")
+    tabla["porcentaje_de_palabras_clave"] = tabla["porcentaje_de_palabras_clave"].astype(float)
+    tabla["principales_palabras_clave"] = tabla["principales_palabras_clave"].str.replace("\s+"," ", regex=True).str.replace(",+", ",", regex=True).str.rstrip(".")
+    
+    
+    return tabla
