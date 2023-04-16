@@ -13,13 +13,27 @@ import pandas as pd
 
 
 def ingest_data():
-    tabla = pd.read_fwf("clusters_report.txt", skiprows=4, names=['cluster', 'cantidad_de_palabras_clave', 'porcentaje_de_palabras_clave', 'principales_palabras_clave']) 
-    tabla.fillna(method="ffill", inplace=True)
-    tabla = tabla.groupby(['cluster', 'cantidad_de_palabras_clave', 'porcentaje_de_palabras_clave'])['principales_palabras_clave'].apply(' '.join).reset_index() 
-    tabla["cantidad_de_palabras_clave"] = tabla["cantidad_de_palabras_clave"].astype(int)
-    tabla["porcentaje_de_palabras_clave"] = tabla["porcentaje_de_palabras_clave"].str.replace("%", "").str.replace(",", ".")
-    tabla["porcentaje_de_palabras_clave"] = tabla["porcentaje_de_palabras_clave"].astype(float)
-    tabla["principales_palabras_clave"] = tabla["principales_palabras_clave"].str.replace("\s+"," ", regex=True).str.replace(",+", ",", regex=True).str.rstrip(".")
-    
-    
-    return tabla
+
+    data = pd.read_fwf(        "clusters_report.txt", widths = [9, 16, 16, 80], header = None,
+        names = ["cluster","cantidad_de_palabras_clave","porcentaje_de_palabras_clave", "-"],
+        skip_blank_lines = False, converters = {"porcentaje_de_palabras_clave": 
+        lambda x: x.rstrip(" %").replace(",",".")}).drop([0,1,2,3], axis=0)
+
+    columna4 = data["-"]
+    data = data[data["cluster"].notna()].drop("-", axis=1)
+    data = data.astype({ "cluster": int, "cantidad_de_palabras_clave": int, "porcentaje_de_palabras_clave": float})
+
+    c4Pro = []
+    text = ""
+    for lin in columna4:
+        if isinstance(lin, str): text += lin+" "
+        else:
+            text = ", ".join([" ".join(x.split()) for x in text.split(",")])
+            c4Pro.append(text.rstrip("."))
+            text = ""
+            continue
+
+    data["principales_palabras_clave"] = c4Pro
+
+    return data
+
